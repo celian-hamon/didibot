@@ -1,2 +1,7 @@
 config.json
 log*.log
+.idea/didibot.iml
+.idea/discord.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/workspace.xml

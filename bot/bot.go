@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"discordbot/bot/pokemon"
 	"fmt"
 	"strings"
 
@@ -68,6 +69,10 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		if cmd == "help" {
 			err := help(arg, m.ChannelID, m.Message.Author.ID, m, s)
+			security.Log(cmd, arg, err, m)
+		}
+		if cmd == "drop" {
+			err := pokemon.Drop(arg, m, s)
 			security.Log(cmd, arg, err, m)
 		}
 
