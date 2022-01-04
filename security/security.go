@@ -17,7 +17,7 @@ func IsAdmin(userID string, adminList []string) bool {
 	}
 	return false
 }
-func Log(cmd string, arg []string, erro string, m *discordgo.MessageCreate) {
+func Log(cmd string, arg []string, erro string, reply string, m *discordgo.MessageCreate) {
 	f, err := os.OpenFile("logs"+time.Now().Format("20060102")+".log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
@@ -29,6 +29,9 @@ func Log(cmd string, arg []string, erro string, m *discordgo.MessageCreate) {
 	logger.Println("ARGUMENTS: " + strings.Join(arg[0:], " "))
 	if erro != "" {
 		logger.Println("Erreur : " + erro)
+	}
+	if reply != "" {
+		logger.Println("Reply : " + reply)
 	}
 	logger.Println("----------------------------------------")
 
