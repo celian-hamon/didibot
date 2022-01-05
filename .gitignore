@@ -6,3 +6,4 @@ log*.log
 .idea/vcs.xml
 .idea/workspace.xml
 .idea/
+*.exe
