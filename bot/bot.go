@@ -28,13 +28,14 @@ func Start() {
 
 	BotID = u.ID
 	goBot.AddHandler(messageHandler)
+
 	err = goBot.Open()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 	fmt.Println("Bot is running")
-
+	
 }
 
 func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -44,38 +45,41 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		arg := strings.Split(m.Content, " ")
 		cmd := arg[0]
 		if cmd == "time" {
-			err := timer(arg, m.ChannelID, m, s)
-			security.Log(cmd, arg, err, m)
+			err, reply := timer(arg, m.ChannelID, m, s)
+			security.Log(cmd, arg, err,reply, m)
 		}
 		if cmd == "sondage" {
-			err := sondage(arg, m.ChannelID, m, s)
-			security.Log(cmd, arg, err, m)
+			err, reply := sondage(arg, m.ChannelID, m, s)
+			security.Log(cmd, arg, err,reply, m)
 		}
 		if cmd == "echo" {
-			err := echo(arg, m.ChannelID, m.Message.ID, m, s)
-			security.Log(cmd, arg, err, m)
+			err, reply := echo(arg, m.ChannelID, m.Message.ID, m, s)
+			security.Log(cmd, arg, err,reply, m)
 		}
 		if cmd == "spam" {
 			if !security.IsAdmin(m.Author.ID, config.AdminList) {
 				_, err := send(m.ChannelID, "Tu as pas les droits chacal")
 				if err != nil {
-					security.Log(cmd, arg, err.Error(), m)
+					security.Log(cmd, arg, err.Error(), "", m)
 				}
 			} else {
-				err := spam(arg, m.ChannelID, m, s)
-				security.Log(cmd, arg[1:], err, m)
+				err, reply := spam(arg, m.ChannelID, m, s)
+				security.Log(cmd, arg[1:], err,reply, m)
 			}
 
 		}
 		if cmd == "help" {
-			err := help(arg, m.ChannelID, m.Message.Author.ID, m, s)
-			security.Log(cmd, arg, err, m)
+			err, reply := help(arg, m.ChannelID, m.Message.Author.ID, m, s)
+			security.Log(cmd, arg, err,reply, m)
 		}
 		if cmd == "drop" {
-			err := pokemon.Drop(arg, m, s)
-			security.Log(cmd, arg, err, m)
+			err, reply := pokemon.Drop(arg, m, s)
+			security.Log(cmd, arg, err, reply, m)
 		}
-
+		if cmd == "ratio"{
+			err, reply := ratio(arg, m.ChannelID, m.Message.ID, "", m, s)
+			security.Log(cmd, arg, err, reply, m)
+		}
 	}
 
 }
