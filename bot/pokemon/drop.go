@@ -28,7 +28,7 @@ var typeColor = map[string]int{
 	"rock":     0xB8A038,
 }
 
-func Drop(arg []string, m *discordgo.MessageCreate, s *discordgo.Session) string {
+func Drop(arg []string, m *discordgo.MessageCreate, s *discordgo.Session) (string, string) {
 	send := s.ChannelMessageSendEmbed
 	droppedPokemon, err := pokeapi.Pokemon(trueRandom(1, 1118))
 
@@ -38,7 +38,7 @@ func Drop(arg []string, m *discordgo.MessageCreate, s *discordgo.Session) string
 	}
 
 	if err != nil {
-
+		return err.Error(), ""
 	}
 
 	embed := &discordgo.MessageEmbed{
@@ -46,17 +46,17 @@ func Drop(arg []string, m *discordgo.MessageCreate, s *discordgo.Session) string
 		Color:       typeColor[droppedPokemon.Types[0].Type.Name], // Green
 		Description: strconv.Itoa(droppedPokemon.BaseExperience) + " XP",
 		Fields: []*discordgo.MessageEmbedField{
-			&discordgo.MessageEmbedField{
+			{
 				Name:   "Height : ",
 				Value:  strconv.Itoa(droppedPokemon.Height) + "0 cm",
 				Inline: true,
 			},
-			&discordgo.MessageEmbedField{
+			{
 				Name:   "Weigth : ",
 				Value:  strconv.Itoa(droppedPokemon.Weight) + "0 grammes",
 				Inline: true,
 			},
-			&discordgo.MessageEmbedField{
+			{
 				Name:   "Types : ",
 				Value:  typeString,
 				Inline: false,
@@ -69,7 +69,10 @@ func Drop(arg []string, m *discordgo.MessageCreate, s *discordgo.Session) string
 		Title:     droppedPokemon.Name,
 	}
 	_, err = send(m.ChannelID, embed)
-	return ""
+	if err != nil {
+		return err.Error(), ""
+	}
+	return "", ""
 }
 
 func trueRandom(min, max int) string {
