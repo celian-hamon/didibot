@@ -9,9 +9,7 @@ import (
 func main() {
 
 	err := config.ReadConfig()
-	if err != nil {
-		return
-	}
+	config.Check(err)
 	bot.Start()
 
 	<-make(chan struct{})
