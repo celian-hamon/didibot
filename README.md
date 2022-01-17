@@ -1,9 +1,20 @@
-# didibot
-Hello this is a bot made by :
+<h1 align="center">
+  <br>
+  Didibot
+  <br>
+</h1>
+<h4 align="center">A simple golang bot made with <a href="http://github.com/bwmarrin/discordgo" target="_blank">dicordgo</a>.</h4>
+<p align="center">
+    <img src="https://img.shields.io/badge/problems%20%3F-no-brightgreen">
+    <img alt="GitHub top language" src="https://img.shields.io/github/languages/top/celian-hamon/didibot">
+    <img alt="Discord" src="https://img.shields.io/discord/894579462027485254">
+    <img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/celian-hamon/didibot">
+    <img alt="Lines of code" src="https://img.shields.io/tokei/lines/github/celian-hamon/didibot">
+</p>
+
+## Made by :
 - [p2acoo](https://github.com/p2acoo)
 - [Célian HAMON](https://github.com/celian-hamon)
-
-its purpose is to bring help and enjoyement to our class discord server 
 
 ## Functions :
 
