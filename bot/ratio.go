@@ -9,12 +9,7 @@ import (
 )
 
 func ratio(arg []string, channelID string, messageID string, reply string, m *discordgo.MessageCreate, s *discordgo.Session) (string, string) {
-	type data struct {
-		MaxAge    int
-		MaxUses   int
-		Temporary bool
-		Unique    bool
-	}
+
 	send := s.ChannelMessageSend
 	if len(arg) > 1 {
 		_, err := send(channelID, m.Author.Username+", veuillez pas mettre d'arguements.")

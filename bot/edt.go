@@ -3,16 +3,19 @@ package bot
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
-type EDT struct {
+type EDTGlobal struct {
 	CodeSeance        int    `json:"CodeSeance"`
 	NomSession        string `json:"NomSession"`
 	NomMatiere        string `json:"NomMatiere"`
@@ -22,7 +25,7 @@ type EDT struct {
 	FinSeance         string `json:"FinSeance"`
 	NomSalle          string `json:"NomSalle"`
 }
-type envoie struct {
+type EDTSem struct {
 	NomMatiere        string
 	NomSession        string
 	NomSalle          string
@@ -44,11 +47,9 @@ func edt(arg []string, channelID string, messageID string, m *discordgo.MessageC
 				send(channelID, "erreur")
 				return "", ""
 			} else {
-
+				parseEdtsem(channelID, messageID, m, s)
 				return "", ""
 			}
-			send(channelID, "next")
-			return "", ""
 		case "reload":
 			send(channelID, "reloading")
 			if _, err := reload(); err != nil {
@@ -65,6 +66,7 @@ func edt(arg []string, channelID string, messageID string, m *discordgo.MessageC
 	return "", ""
 }
 
+// reload the edt from api.
 func reload() (string, error) {
 
 	url := "https://api.alternancerouen.fr/planification/session/2290160.json"
@@ -83,19 +85,17 @@ func reload() (string, error) {
 				log.Println(err)
 				return "", err
 			} else {
-				var data []EDT
+				var data []EDTGlobal
 				if err := json.Unmarshal(body, &data); err != nil {
 					log.Println(err)
 					return "", err
 				} else {
 					file, _ := json.MarshalIndent(data, "", " ")
-					err = ioutil.WriteFile("./bot/edt/edt.json", file, 0644)
+					err = ioutil.WriteFile("./bot/edt/edtglobal.json", file, 0644)
 					if err != nil {
 						log.Println(err)
 						return "", err
 					}
-					fmt.Println(data)
-
 				}
 			}
 		}
@@ -104,61 +104,63 @@ func reload() (string, error) {
 	return "", nil
 }
 
-func parseEdt() (envoie, error) {
-	file, err := ioutil.ReadFile("./bot/edt/edt.json")
+//parse the global edt to make a semaine edt
+func parseEdt() (string, error) {
+	var result []byte
+	var idents []EDTSem
+	var journee string
+	file, err := ioutil.ReadFile("./bot/edt/edtglobal.json")
 	if err != nil {
 		log.Println(err)
-		return envoie{}, err
+		return "", err
 	}
-	var data []EDT
+	var data []EDTGlobal
 	if err := json.Unmarshal(file, &data); err != nil {
 		log.Println(err)
-		return envoie{}, err
+		return "", err
 	} else {
 		lundi, _ := date()
-		for _, v := range data {
-			if strings.Contains(v.DebutSeance, lundi) {
-
-				//fmt.Println(v.NomMatiere, v.NomSession, v.NomSalle, v.IntervenantNom, v.IntervenantPrenom, v.DebutSeance, v.FinSeance)
-				pp := envoie{
-					NomMatiere:        v.NomMatiere,
-					NomSession:        v.NomSession,
-					NomSalle:          v.NomSalle,
-					IntervenantNom:    v.IntervenantNom,
-					IntervenantPrenom: v.IntervenantPrenom,
-					DebutSeance:       v.DebutSeance,
-					FinSeance:         v.FinSeance,
-				}
-
-				datee, _ := time.Parse("2006-01-02", lundi)
-				for i := 0; i < 5; i++ {
-					jour := datee.AddDate(0, 0, i)
-					annee, mois, day := jour.Date()
-					journee := strconv.Itoa(annee) + "-0" + strconv.Itoa(int(mois)) + "-0" + strconv.Itoa(day)
-					for _, v := range data {
-						if strings.Contains(v.DebutSeance, journee) {
-							//fmt.Println(v.NomMatiere, v.NomSession, v.NomSalle, v.IntervenantNom, v.IntervenantPrenom, v.DebutSeance, v.FinSeance)
-							pp = envoie{
-								NomMatiere:        v.NomMatiere,
-								NomSession:        v.NomSession,
-								NomSalle:          v.NomSalle,
-								IntervenantNom:    v.IntervenantNom,
-								IntervenantPrenom: v.IntervenantPrenom,
-								DebutSeance:       v.DebutSeance,
-								FinSeance:         v.FinSeance,
-							}
-							return pp, nil
-						}
-
+		datee, _ := time.Parse("2006-01-02", lundi)
+		for i := 0; i < 5; i++ {
+			jour := datee.AddDate(0, 0, i)
+			annee, mois, day := jour.Date()
+			journee = strconv.Itoa(annee) + "-0" + strconv.Itoa(int(mois)) + "-0" + strconv.Itoa(day)
+			for _, v := range data {
+				if strings.Contains(v.DebutSeance, journee) {
+					idents = append(idents, EDTSem{NomMatiere: v.NomMatiere, NomSession: v.NomSession, NomSalle: v.NomSalle, IntervenantNom: v.IntervenantNom, IntervenantPrenom: v.IntervenantPrenom, DebutSeance: v.DebutSeance, FinSeance: v.FinSeance})
+					if err != nil {
+						log.Println(err)
+						return "", err
 					}
-
 				}
+
 			}
+
 		}
+		result, err = json.Marshal(idents)
+		if err != nil {
+			log.Println(err)
+			return "", err
+		}
+
+		f, err := os.OpenFile("./bot/edt/edtsemaine.json", os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Println(err)
+			return "", err
+		}
+
+		_, err = io.WriteString(f, string(result))
+		if err != nil {
+			log.Println(err)
+			return "", err
+		}
+		f.Close()
+		return "", nil
 	}
 
-	return envoie{}, nil
 }
+
+//get date fonction
 func date() (string, error) {
 	now := time.Now()
 	currentYear, currentMonth, _ := now.Date()
@@ -168,12 +170,27 @@ func date() (string, error) {
 	for i := 0; i <= lastOfMonth.Day(); i++ {
 		day := time.Date(currentYear, currentMonth, i, 0, 0, 0, 0, currentLocation).Weekday()
 		if day == time.Monday {
-			fmt.Println(i)
-			fmt.Println(currentYear, "-0", int(now.Month()), "-0", i)
 			lundi := strconv.Itoa(currentYear) + "-0" + strconv.Itoa(int(now.Month())) + "-0" + strconv.Itoa(i)
-			fmt.Println(lundi)
 			return lundi, nil
 		}
 	}
 	return "", nil
+}
+
+//parse the semaine edt to send msg to the channel
+func parseEdtsem(channelID string, messageID string, m *discordgo.MessageCreate, s *discordgo.Session) {
+	send := s.ChannelMessageSend
+	file, err := ioutil.ReadFile("./bot/edt/edtsemaine.json")
+	if err != nil {
+		log.Println(err)
+	}
+	var data []EDTSem
+	if err := json.Unmarshal(file, &data); err != nil {
+		log.Println(err)
+	} else {
+		for _, v := range data {
+
+			send(channelID, fmt.Sprintf("%s %s %s %s %s %s %s", v.NomMatiere, v.NomSession, v.NomSalle, v.IntervenantNom, v.IntervenantPrenom, v.DebutSeance, v.FinSeance))
+		}
+	}
 }
