@@ -2,6 +2,7 @@ package security
 
 import (
 	"discordbot/config"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -37,4 +38,12 @@ func Log(cmd string, arg []string, erro string, reply string, m *discordgo.Messa
 	}
 	logger.Println("----------------------------------------")
 
+}
+func Check(cmd string, err error) (string, string) {
+	if err != nil {
+		Log(cmd, []string{}, err.Error(), "", nil)
+		fmt.Println(err.Error())
+		return err.Error(), ""
+	}
+	return "", ""
 }
