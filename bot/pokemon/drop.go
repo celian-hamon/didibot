@@ -1,11 +1,12 @@
 package pokemon
 
 import (
-	"github.com/bwmarrin/discordgo"
-	"github.com/mtslzr/pokeapi-go"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/mtslzr/pokeapi-go"
 )
 
 var typeColor = map[string]int{
@@ -28,7 +29,7 @@ var typeColor = map[string]int{
 	"rock":     0xB8A038,
 }
 
-func Drop(arg []string, m *discordgo.MessageCreate, s *discordgo.Session) (string,string) {
+func Drop(arg []string, m *discordgo.MessageCreate, s *discordgo.Session) (string, string) {
 	send := s.ChannelMessageSendEmbed
 	droppedPokemon, err := pokeapi.Pokemon(trueRandom(1, 1118))
 
@@ -38,7 +39,7 @@ func Drop(arg []string, m *discordgo.MessageCreate, s *discordgo.Session) (strin
 	}
 
 	if err != nil {
-		return err.Error(),""
+		return err.Error(), ""
 	}
 
 	embed := &discordgo.MessageEmbed{
@@ -70,9 +71,9 @@ func Drop(arg []string, m *discordgo.MessageCreate, s *discordgo.Session) (strin
 	}
 	_, err = send(m.ChannelID, embed)
 	if err != nil {
-		return err.Error(),""
+		return err.Error(), ""
 	}
-	return "",""
+	return "", ""
 }
 
 func trueRandom(min, max int) string {
