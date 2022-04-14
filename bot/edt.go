@@ -26,29 +26,38 @@ type EDTGlobal struct {
 	FinSeance         string `json:"FinSeance"`
 	NomSalle          string `json:"NomSalle"`
 }
+
+type EDTSend struct {
+	array []map[string]string
+}
 type EDTSem struct {
 	NomMatiere        string
-	NomSession        string
-	NomSalle          string
 	IntervenantNom    string
 	IntervenantPrenom string
 	DebutSeance       string
 	FinSeance         string
+	NomSalle          string
+	NomSession        string
+}
+type EDTSem2 struct {
+	DebutSemaine string
 }
 
 func edt(arg []string, channelID string, messageID string, m *discordgo.MessageCreate, s *discordgo.Session) (string, string) {
 	send := s.ChannelMessageSend
-	if len(arg) == 2 {
+	if len(arg) == 2 || len(arg) == 3 {
 		switch arg[1] {
 		case "help":
-			send(channelID, "salut")
+			send(channelID, "Salut si tu veux savoir le prochain EDT, tu peux faire m!edt")
 			return "", ""
 		case "next":
-			if _, err := parseEdt(); err != nil {
+			argm, _ := time.Parse("January", arg[2])
+			mounths := argm.Month()
+			fmt.Println(mounths)
+			if _, err := parseEdt(channelID, messageID, m, s, mounths); err != nil {
 				send(channelID, "erreur")
 				return "", ""
 			} else {
-				parseEdtsem(channelID, messageID, m, s)
 				return "", ""
 			}
 		case "reload":
@@ -60,16 +69,33 @@ func edt(arg []string, channelID string, messageID string, m *discordgo.MessageC
 				send(channelID, "reloaded")
 				return "", ""
 			}
+		case "creneau":
+			send(channelID, "creneau")
+			_, err := creneau()
+			if err != nil {
+				send(channelID, "error")
+				return "", ""
+			} else {
+				send(channelID, "ok 😔")
+				return "", ""
+			}
+
 		}
-	} else {
-		send(channelID, "veuillez mettre un argument valide")
+	}
+	if len(arg) == 1 {
+		if _, err := parseEdt(channelID, messageID, m, s, 0); err != nil {
+			send(channelID, "erreur")
+			return "", ""
+		} else {
+			fmt.Println("ok2")
+			return "", ""
+		}
 	}
 	return "", ""
 }
 
 // reload the edt from api.
 func reload() (string, error) {
-
 	url := "https://api.alternancerouen.fr/planification/session/2290160.json"
 	request := http.Client{
 		Timeout: time.Second * 10,
@@ -93,6 +119,7 @@ func reload() (string, error) {
 				} else {
 					file, _ := json.MarshalIndent(data, "", " ")
 					err = ioutil.WriteFile("./bot/edt/edtglobal.json", file, 0644)
+					creneau()
 					if err != nil {
 						log.Println(err)
 						return "", err
@@ -104,12 +131,48 @@ func reload() (string, error) {
 
 	return "", nil
 }
+func creneau() (string, error) {
+
+	file, _ := ioutil.ReadFile("./bot/edt/edtglobal.json")
+	var data []EDTGlobal
+	var result []byte
+
+	var idents []EDTSem2
+	if err := json.Unmarshal(file, &data); err != nil {
+		log.Println(err)
+		return "", err
+	}
+	i := 0
+	for _, v := range data {
+		i++
+		if i == 1 {
+			idents = append(idents, EDTSem2{
+				DebutSemaine: v.DebutSeance,
+			})
+		}
+		if i == 10 {
+			i = 0
+		}
+
+	}
+
+	result, err := json.Marshal(idents)
+	security.Check("creneau", err)
+	f, err := os.OpenFile("./bot/edt/creneau.json", os.O_CREATE|os.O_WRONLY, 0644)
+	security.Check("creneau", err)
+	defer f.Close()
+	_, err = io.WriteString(f, string(result))
+	security.Check("creneau", err)
+
+	return "", nil
+}
 
 //parse the global edt to make a semaine edt
-func parseEdt() (string, error) {
+func parseEdt(channelID string, messageID string, m *discordgo.MessageCreate, s *discordgo.Session, mounth time.Month) (string, error) {
 	var result []byte
 	var idents []EDTSem
 	var journee string
+
 	file, err := ioutil.ReadFile("./bot/edt/edtglobal.json")
 	if err != nil {
 		log.Println(err)
@@ -122,19 +185,26 @@ func parseEdt() (string, error) {
 	} else {
 		lundi, _ := date(0)
 		datee, _ := time.Parse("2006-01-02", lundi)
-
 		vend := datee.AddDate(0, 0, 4)
 		fmt.Println(vend.Day() < time.Now().Day())
-		if vend.Day() < time.Now().Day() {
-
-			lundi, _ = date(1)
+		if mounth != 0 {
+			fmt.Println("fierjiofjerio", mounth)
+			lundi, _ = date(mounth - time.Now().Month())
+			fmt.Println("cc2", lundi)
 			datee, _ = time.Parse("2006-01-02", lundi)
+			vend = datee.AddDate(0, 0, 4)
+			fmt.Println(datee)
+			fmt.Println("lundi", lundi)
+			fmt.Println("vend", vend.Format("2006-01-02"))
+		} else {
+			mounth = time.Now().Month()
 		}
 
 		for i := 0; i < 5; i++ {
 			jour := datee.AddDate(0, 0, i)
 			annee, mois, day := jour.Date()
 			journee = strconv.Itoa(annee) + "-0" + strconv.Itoa(int(mois)) + "-0" + strconv.Itoa(day)
+			fmt.Println("journee", journee)
 			for _, v := range data {
 				if strings.Contains(v.DebutSeance, journee) {
 					idents = append(idents, EDTSem{NomMatiere: v.NomMatiere, NomSession: v.NomSession, NomSalle: v.NomSalle, IntervenantNom: v.IntervenantNom, IntervenantPrenom: v.IntervenantPrenom, DebutSeance: v.DebutSeance, FinSeance: v.FinSeance})
@@ -146,25 +216,25 @@ func parseEdt() (string, error) {
 		}
 		result, err = json.Marshal(idents)
 		security.Check("edt", err)
-
-		f, err := os.OpenFile("./bot/edt/edtsemaine.json", os.O_CREATE|os.O_WRONLY, 0644)
+		fmt.Println("gros caca", mounth)
+		f, err := os.OpenFile("./bot/edt/edtsemaine"+mounth.String()+".json", os.O_CREATE|os.O_WRONLY, 0644)
 		security.Check("edt", err)
-
+		defer f.Close()
 		_, err = io.WriteString(f, string(result))
 		security.Check("edt", err)
 
-		return "", nil
 	}
-
+	parseEdtsem(channelID, messageID, m, s, mounth)
+	return "", nil
 }
 
 //get date fonction
-func date(add int) (string, error) {
+func date(add time.Month) (string, error) {
 	now := time.Now()
 	currentYear, currentMonth, _ := now.Date()
 	currentLocation := now.Location()
-	if add == 1 {
-		currentMonth = currentMonth + 1
+	if add != 0 {
+		currentMonth = currentMonth + add
 		fmt.Println(currentMonth)
 	}
 	firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
@@ -181,66 +251,70 @@ func date(add int) (string, error) {
 }
 
 //parse the semaine edt to send msg to the channel
-func parseEdtsem(channelID string, messageID string, m *discordgo.MessageCreate, s *discordgo.Session) {
-	//sende := s.ChannelMessageSendEmbed
-	send := s.ChannelMessageSend
-	//embed := &discordgo.MessageEmbed{}
-	file, err := ioutil.ReadFile("./bot/edt/edtsemaine.json")
+func parseEdtsem(channelID string, messageID string, m *discordgo.MessageCreate, s *discordgo.Session, mounth time.Month) {
+	fmt.Println("cc", mounth)
+	jsonFile, err := os.Open("./bot/edt/edtsemaine" + mounth.String() + ".json")
 	if err != nil {
-		log.Println(err)
+		fmt.Println(err)
 	}
-	var data []EDTSem
-	if err := json.Unmarshal(file, &data); err != nil {
+	defer jsonFile.Close()
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+	var data EDTSend
+	if err := json.Unmarshal(byteValue, &data.array); err != nil {
 		log.Println(err)
 	} else {
-		var total string
-		for key, v := range data {
-			debut, _ := time.Parse("2006-01-02T15:04:05Z", v.DebutSeance)
-			fin, _ := time.Parse("2006-01-02T15:04:05Z", v.FinSeance)
-			matiere := v.NomSession + " " + v.NomMatiere
-			prof := v.IntervenantNom + " " + v.IntervenantPrenom
+		embed := &discordgo.MessageEmbed{}
+		days := [...]string{"Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"}
+
+		for index, day := range data.array {
+			debut, _ := time.Parse("2006-01-02T15:04:05Z", day["DebutSeance"])
+			fin, _ := time.Parse("2006-01-02T15:04:05Z", day["FinSeance"])
+			matiere := day["NomSession"] + " " + day["NomMatiere"]
+			prof := day["IntervenantNom"] + " " + day["IntervenantPrenom"]
 			jour := debut.Format("2 Jan 2006")
-			total += "**Horaire : **" + debut.Format("15:04") + "** => **" + fin.Format("15:04") + "\n" + "**Matière : **" + matiere + "\n" + "**Prof : **" + prof + "\n" + "**Salle : **" + v.NomSalle + "\n \n"
-			/*	embed = &discordgo.MessageEmbed{
-				Author:      &discordgo.MessageEmbedAuthor{},
-				Color:       20, // Green
-				Description: jour,
-				Fields: []*discordgo.MessageEmbedField{
-					&discordgo.MessageEmbedField{
-						Name:   "Horaire : ",
-						Value:  debut.Format("15:04") + "** => **" + fin.Format("15:04"),
-						Inline: true,
-					},
-					&discordgo.MessageEmbedField{
-						Name:   "Matière : ",
-						Value:  matiere,
-						Inline: true,
-					},
-					&discordgo.MessageEmbedField{
-						Name:   "Prof : ",
-						Value:  prof,
-						Inline: false,
-					},
-					&discordgo.MessageEmbedField{
-						Name:   "Salle : ",
-						Value:  v.NomSalle,
-						Inline: false,
-					},
+			fields := []*discordgo.MessageEmbedField{
+				{
+					Name:   "Heure",
+					Value:  debut.Format("15:04") + " - " + fin.Format("15:04"),
+					Inline: false,
 				},
-
-				Thumbnail: &discordgo.MessageEmbedThumbnail{
-					URL: "",
+				{
+					Name:   "Matiere",
+					Value:  matiere,
+					Inline: true,
 				},
-				Timestamp: time.Now().Format(time.RFC3339), // Discord wants ISO8601; RFC3339 is an extension of ISO8601 and should be completely compatible.
-				Title:     "edt",
-			} */
+				{
+					Name:   "Professeur",
+					Value:  prof,
+					Inline: true,
+				},
+				{
+					Name:   "Salle",
+					Value:  day["NomSalle"],
+					Inline: true,
+				},
+			}
+			if index%2 == 0 {
+				embed = &discordgo.MessageEmbed{
+					Footer: &discordgo.MessageEmbedFooter{
+						Text: "Made by Paco and Cece",
+					},
+					Author:    &discordgo.MessageEmbedAuthor{},
+					Color:     0x2596be,
+					Thumbnail: &discordgo.MessageEmbedThumbnail{},
+					Timestamp: time.Now().Format(time.RFC3339),
+					Title:     days[index/2] + " " + jour,
+				}
 
-			if key == 1 || key == 3 || key == 5 || key == 7 || key == 9 {
+				embed.Fields = append(embed.Fields, fields...)
 
-				send(channelID, " "+jour+"\n \n"+total+"---------")
-				//sende(channelID, embed)
-				total = ""
-				//embed = nil
+			}
+			if index%2 != 0 {
+				// Format Reset and Send the embed
+				embed.Fields = append(embed.Fields, fields...)
+				s.ChannelMessageSendEmbed(channelID, embed)
+
+				embed = &discordgo.MessageEmbed{}
 			}
 		}
 	}
