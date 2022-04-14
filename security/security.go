@@ -29,7 +29,7 @@ func Log(cmd string, arg []string, erro string, reply string, m *discordgo.Messa
 	logger := log.New(f, "", log.LstdFlags)
 	logger.Println("AUTHORS: " + m.Author.Username + " " + m.Author.ID)
 	logger.Println("COMMAND: " + cmd)
-	logger.Println("ARGUMENTS: " + strings.Join(arg[0:], " "))
+	logger.Println("ARGUMENTS: " + strings.Join(arg[1:], " "))
 	if erro != "" {
 		logger.Println("Erreur : " + erro)
 	}
