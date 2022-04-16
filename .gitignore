@@ -6,7 +6,7 @@ log*.log
 .idea/vcs.xml
 .idea/workspace.xml
 .idea/
-edtglobal.json
+bot/edt
 edtsemaine*.json
 discordbot
 
