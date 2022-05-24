@@ -27,12 +27,6 @@
 !ratio (must be a reply)                                 : if the number of like increase the user ratioed is kicked and will receive an invitation link back to the serv
 !sondage <things to submit to poll>                      : create a poll
 !help                                                    : send a mp with the list of commands of the bot
-!time                                                    : give you the time
-
-+ pokemon part
-!p-starter                                               : get a starter necessary to use all the other commands
-!p-drop                                                  : send a random pokemon
-!p-get                                                   : get a pokemon by its english name
-!p-pokedex                                               : get a list of all the pokemon of someone
+!time                                                    : give you the time                                              : get a list of all the pokemon of someone
 
 ```
