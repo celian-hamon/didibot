@@ -1,7 +1,13 @@
 steps:
     # Docker Build
     - name: "gcr.io/cloud-builders/docker"
-      args: ["build", "."]
+      args:
+          [
+              "build",
+              "-t",
+              "europe-west1-docker.pkg.dev/invertible-spot-351518/didibot/myimage:$SHORT_SHA",
+              ".",
+          ]
 
     # Docker push to Google Artifact Registry
     - name: "gcr.io/cloud-builders/docker"
