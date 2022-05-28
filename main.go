@@ -14,7 +14,7 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	go http.ListenAndServe(":"+port, nil)
+	http.ListenAndServe(":"+port, nil)
 
 	err := config.ReadConfig()
 	if err != nil {
