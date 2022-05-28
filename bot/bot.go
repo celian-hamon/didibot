@@ -27,6 +27,7 @@ func Start() {
 	}
 
 	BotID = u.ID
+	goBot.AddHandler(ready)
 	goBot.AddHandler(messageHandler)
 
 	err = goBot.Open()
@@ -35,7 +36,11 @@ func Start() {
 		return
 	}
 	fmt.Println("Bot is running")
-	
+
+}
+
+func ready(s *discordgo.Session, r *discordgo.Ready) {
+	s.UpdateListeningStatus(config.BotPrefix + "help")
 }
 
 func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -46,15 +51,15 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		cmd := arg[0]
 		if cmd == "time" {
 			err, reply := timer(arg, m.ChannelID, m, s)
-			security.Log(cmd, arg, err,reply, m)
+			security.Log(cmd, arg, err, reply, m)
 		}
 		if cmd == "sondage" {
 			err, reply := sondage(arg, m.ChannelID, m, s)
-			security.Log(cmd, arg, err,reply, m)
+			security.Log(cmd, arg, err, reply, m)
 		}
 		if cmd == "echo" {
 			err, reply := echo(arg, m.ChannelID, m.Message.ID, m, s)
-			security.Log(cmd, arg, err,reply, m)
+			security.Log(cmd, arg, err, reply, m)
 		}
 		if cmd == "spam" {
 			if !security.IsAdmin(m.Author.ID, config.AdminList) {
@@ -64,19 +69,19 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 				}
 			} else {
 				err, reply := spam(arg, m.ChannelID, m, s)
-				security.Log(cmd, arg[1:], err,reply, m)
+				security.Log(cmd, arg[1:], err, reply, m)
 			}
 
 		}
 		if cmd == "help" {
 			err, reply := help(arg, m.ChannelID, m.Message.Author.ID, m, s)
-			security.Log(cmd, arg, err,reply, m)
+			security.Log(cmd, arg, err, reply, m)
 		}
 		if cmd == "drop" {
 			err, reply := pokemon.Drop(arg, m, s)
 			security.Log(cmd, arg, err, reply, m)
 		}
-		if cmd == "ratio"{
+		if cmd == "ratio" {
 			err, reply := ratio(arg, m.ChannelID, m.Message.ID, "", m, s)
 			security.Log(cmd, arg, err, reply, m)
 		}
