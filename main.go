@@ -9,18 +9,17 @@ import (
 )
 
 func main() {
+	err := config.ReadConfig()
+	if err != nil {
+		return
+	}
+	go bot.Start()
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 	http.ListenAndServe(":"+port, nil)
-
-	err := config.ReadConfig()
-	if err != nil {
-		return
-	}
-	bot.Start()
 
 	<-make(chan struct{})
 }
