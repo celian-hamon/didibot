@@ -29,4 +29,12 @@ steps:
               "europe-west1",
               "--platform",
               "managed",
+              "-e"
+              "TOKEN=${TOKEN}",
+              "-e",
+              "BOTPREFIX=o!",
           ]
+availableSecrets:
+  secretManager:
+  - versionNamz: projects/123037255119/secrets/TOKEN/version/1
+    name: TOKEN
